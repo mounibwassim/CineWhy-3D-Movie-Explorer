@@ -4,24 +4,45 @@
 
 :root {
   background-color: #050505;
-  color: white;
+  color: #e0e0e0;
 }
 
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Montserrat', sans-serif;
 }
 
 .cinematic-gradient {
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(5,5,5,0.9) 70%, #050505 100%);
+  background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
 }
 
 .glass {
-  background: rgba(26, 26, 26, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(20, 20, 20, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel {
+  @apply glass rounded-3xl border border-white/5;
+}
+
+.text-neon-green {
+  color: #00ffcc;
+  text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
 }
 
 .card-3d {
@@ -30,5 +51,5 @@ body {
 }
 
 .card-3d:hover {
-  transform: perspective(1000px) rotateX(10deg) rotateY(-10deg) translateZ(20px);
+  transform: perspective(1000px) rotateX(5deg) rotateY(-5deg) translateZ(10px);
 }

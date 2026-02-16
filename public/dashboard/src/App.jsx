@@ -136,6 +136,8 @@ const DetailModal = ({ movie, onClose }) => {
     )
 }
 
+import { LogicMap } from './components/LogicMap'
+
 function MainContent() {
     const { view, setView, movies, setMovies, heroMovie, setHeroMovie, setLastCriteria } = useMovieContext();
     const [selectedMovie, setSelectedMovie] = useState(null)
@@ -143,6 +145,7 @@ function MainContent() {
     const [activeBackdrop, setActiveBackdrop] = useState('')
 
     const handleSearch = async (criteria) => {
+        console.log("Searching with criteria:", criteria); // Debug Log
         setLoading(true)
         setView('results')
         setLastCriteria(criteria)
@@ -211,20 +214,34 @@ function MainContent() {
             {/* Navigation Bar */}
             <nav className="fixed top-0 w-full z-40 p-8 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm pointer-events-none">
                 <div className="flex items-center gap-4 pointer-events-auto cursor-pointer" onClick={() => setView('landing')}>
-                    {view !== 'landing' && (
-                        <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
-                            CINE<span className="text-primary italic">WHY</span>
-                            <span className="w-2 h-2 bg-primary rounded-full animate-pulse ml-1" />
-                        </h1>
+                    <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2 font-['Montserrat']">
+                        CINE<span className="text-primary italic">WHY</span>
+                        <div className="flex items-center gap-1 ml-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                            <span className="text-[10px] tracking-widest opacity-50 font-mono">ONLINE</span>
+                        </div>
+                    </h1>
+                </div>
+
+                <div className="flex gap-2 pointer-events-auto">
+                    <button
+                        onClick={() => setView('preferences')}
+                        className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${view === 'preferences' || view === 'landing' ? 'bg-white text-black' : 'glass hover:bg-white/10'}`}
+                    >
+                        Discover
+                    </button>
+                    <button
+                        onClick={() => setView('logic')}
+                        className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${view === 'logic' ? 'bg-white text-black' : 'glass hover:bg-white/10'}`}
+                    >
+                        Logic Map
+                    </button>
+                    {view === 'results' && (
+                        <button onClick={() => setView('preferences')} className="px-4 py-2 glass rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center gap-2 border-primary/50 text-primary">
+                            <Filter className="w-4 h-4" /> Refine
+                        </button>
                     )}
                 </div>
-                {view === 'results' && (
-                    <div className="flex gap-4 pointer-events-auto">
-                        <button onClick={() => setView('preferences')} className="px-4 py-2 glass rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center gap-2">
-                            <Filter className="w-4 h-4" /> New Search
-                        </button>
-                    </div>
-                )}
             </nav>
 
             {/* VIEW ROUTING */}
@@ -254,7 +271,20 @@ function MainContent() {
                     </motion.div>
                 )}
 
-                {/* 3. RESULTS DASHBOARD */}
+                {/* 3. LOGIC MAP */}
+                {view === 'logic' && (
+                    <motion.div
+                        key="logic"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.1 }}
+                        className="absolute inset-0 z-20 overflow-y-auto"
+                    >
+                        <LogicMap />
+                    </motion.div>
+                )}
+
+                {/* 4. RESULTS DASHBOARD */}
                 {view === 'results' && (
                     <motion.div
                         key="results"
@@ -265,8 +295,8 @@ function MainContent() {
                         {loading ? (
                             <div className="flex flex-col justify-center items-center h-screen">
                                 <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-8" />
-                                <h2 className="text-2xl font-black text-white animate-pulse">Consulting the Oracle...</h2>
-                                <p className="text-white/40 mt-4 animate-pulse">Accessing Classic Database & Modern APIs</p>
+                                <h2 className="text-2xl font-black text-white animate-pulse font-['Montserrat']">Consulting the Oracle...</h2>
+                                <p className="text-white/40 mt-4 animate-pulse font-mono tracking-widest">Accessing Classic Database & Modern APIs</p>
                             </div>
                         ) : (
                             <>
@@ -283,7 +313,7 @@ function MainContent() {
                                                     <span className="w-12 h-px bg-primary" />
                                                     Expert's Choice #1
                                                 </div>
-                                                <h1 className="text-6xl md:text-[8rem] font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                                                <h1 className="text-6xl md:text-[8rem] font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] font-['Montserrat']">
                                                     {heroMovie.title}
                                                 </h1>
                                                 <p className="text-xl md:text-2xl text-white/60 mb-12 line-clamp-3 font-light max-w-2xl leading-relaxed">
@@ -308,7 +338,7 @@ function MainContent() {
                                 <main className="pb-32 relative z-20">
                                     <div className="px-8 md:px-24 mb-16 flex items-end justify-between">
                                         <div>
-                                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic">The Future Gallery</h2>
+                                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic font-['Montserrat']">The Future Gallery</h2>
                                             <p className="text-white/40 font-medium tracking-widest uppercase text-xs">Flick through your top 20 recommendations</p>
                                         </div>
                                         <div className="flex gap-4 mb-2">
@@ -319,7 +349,7 @@ function MainContent() {
                                                 <ChevronRight className="w-6 h-6" />
                                             </button>
                                         </div>
-                                    </div>
+                                    </div >
 
                                     <Swiper
                                         effect={'coverflow'}
@@ -363,7 +393,7 @@ function MainContent() {
             </AnimatePresence>
 
             {/* Footer - Only visible in Landing or Results */}
-            {view !== 'preferences' && (
+            {view !== 'preferences' && view !== 'logic' && (
                 <footer className="p-12 text-center text-white/20 font-mono text-xs uppercase tracking-[0.5em] border-t border-white/5 bg-black/40 relative z-30">
                     Engineered by CineWhy Expert Shell v2.5 // (c) 2026
                 </footer>

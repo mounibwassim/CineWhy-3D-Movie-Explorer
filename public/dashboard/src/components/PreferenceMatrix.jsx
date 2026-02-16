@@ -63,8 +63,8 @@ export function PreferenceMatrix({ onSearch }) {
                                 key={era.id}
                                 onClick={() => setSelectedEra(era)}
                                 className={`p-6 rounded-xl text-left transition-all border ${selectedEra.id === era.id
-                                        ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,255,204,0.2)]'
-                                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                    ? 'bg-primary/20 border-primary shadow-[0_0_20px_rgba(0,255,204,0.2)]'
+                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
                                     }`}
                             >
                                 <div className={`font-bold text-lg mb-1 ${selectedEra.id === era.id ? 'text-white' : 'text-white/70'}`}>
@@ -87,8 +87,8 @@ export function PreferenceMatrix({ onSearch }) {
                                 key={vibe.id}
                                 onClick={() => setSelectedVibe(vibe)}
                                 className={`p-6 rounded-xl text-left transition-all border ${selectedVibe.id === vibe.id
-                                        ? 'bg-secondary/40 border-secondary shadow-[0_0_20px_rgba(200,0,255,0.2)]'
-                                        : 'bg-white/5 border-white/5 hover:bg-white/10'
+                                    ? 'bg-secondary/40 border-secondary shadow-[0_0_20px_rgba(200,0,255,0.2)]'
+                                    : 'bg-white/5 border-white/5 hover:bg-white/10'
                                     }`}
                             >
                                 <div className={`font-bold text-lg mb-1 ${selectedVibe.id === vibe.id ? 'text-white' : 'text-white/70'}`}>
@@ -111,8 +111,8 @@ export function PreferenceMatrix({ onSearch }) {
                                 key={genre}
                                 onClick={() => toggleGenre(genre)}
                                 className={`px-5 py-2 rounded-full text-sm font-bold transition-all border ${selectedGenres.includes(genre)
-                                        ? 'bg-white text-black border-white scale-105'
-                                        : 'bg-transparent text-white/60 border-white/20 hover:border-white/50'
+                                    ? 'bg-white text-black border-white scale-105'
+                                    : 'bg-transparent text-white/60 border-white/20 hover:border-white/50'
                                     }`}
                             >
                                 {genre}
@@ -128,6 +128,7 @@ export function PreferenceMatrix({ onSearch }) {
                         className="group relative px-12 py-5 bg-gradient-to-r from-primary to-secondary text-black font-black text-xl rounded-2xl shadow-[0_0_40px_rgba(0,255,204,0.4)] hover:shadow-[0_0_60px_rgba(0,255,204,0.6)] hover:scale-105 transition-all duration-300"
                     >
                         <span className="flex items-center gap-3 relative z-10">
+                            {/* Visual Feedback for Search */}
                             INITIATE SEARCH <Play className="fill-black" />
                         </span>
                     </button>

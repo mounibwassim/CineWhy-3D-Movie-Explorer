@@ -20,7 +20,8 @@
         "swiper": "^11.0.5",
         "tailwind-merge": "^1.14.0",
         "three": "^0.160.0",
-        "vanilla-tilt": "^1.8.1"
+        "vanilla-tilt": "^1.8.1",
+        "vite-plugin-glsl": "^1.5.5"
     },
     "devDependencies": {
         "@types/react": "^18.2.15",

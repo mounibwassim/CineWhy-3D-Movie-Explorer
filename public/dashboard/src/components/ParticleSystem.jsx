@@ -2,11 +2,59 @@ import React, { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Float } from '@react-three/drei'
+import glsl from 'vite-plugin-glsl'
+
+const particleVertexShader = `
+uniform float uTime;
+varying vec3 vPosition;
+varying float vGlitch;
+
+void main() {
+  vPosition = position;
+  
+  // Glitch effect on position
+  float glitch = sin(uTime * 10.0 + position.y * 5.0) * 0.02;
+  vGlitch = glitch;
+  
+  vec3 pos = position;
+  pos.x += glitch;
+  
+  // Instance handling + standard view projection
+  #include <begin_vertex>
+  #include <project_vertex>
+}
+`
+
+const particleFragmentShader = `
+uniform float uTime;
+varying vec3 vPosition;
+varying float vGlitch;
+
+void main() {
+  // Matrix Green/Cyan Logic
+  vec3 color = vec3(0.0, 1.0, 0.8); // Cyan
+  
+  // Pulse logic
+  float pulse = (sin(uTime * 2.0) + 1.0) * 0.5;
+  
+  // Glitch flash
+  if (abs(vGlitch) > 0.015) {
+      color = vec3(1.0, 1.0, 1.0); // White flash
+  }
+  
+  gl_FragColor = vec4(color, 0.8 * pulse + 0.2);
+}
+`
 
 export function ParticleSystem({ count = 2000 }) { // Increased count for "Universe" feel
     const mesh = useRef()
     const { mouse, viewport } = useThree()
     const dummy = useMemo(() => new THREE.Object3D(), [])
+
+    // Shader Uniforms
+    const uniforms = useMemo(() => ({
+        uTime: { value: 0 }
+    }), [])
 
     // Generate random initial positions and speeds
     const particles = useMemo(() => {
@@ -25,6 +73,9 @@ export function ParticleSystem({ count = 2000 }) { // Increased count for "Unive
 
     useFrame((state) => {
         if (!mesh.current) return
+
+        // Update Shader Time
+        uniforms.uTime.value = state.clock.elapsedTime
 
         // Map mouse x/y (-1 to 1) to a broad target area
         const targetX = (mouse.x * viewport.width) / 2
@@ -71,12 +122,12 @@ export function ParticleSystem({ count = 2000 }) { // Increased count for "Unive
         <>
             <instancedMesh ref={mesh} args={[null, null, count]}>
                 <dodecahedronGeometry args={[0.2, 0]} />
-                <meshPhongMaterial
-                    color="#00ffcc"
-                    emissive="#00ffcc"
-                    emissiveIntensity={0.5}
-                    transparent
-                    opacity={0.8}
+                {/* Custom GLSL Shader Material */}
+                <shaderMaterial
+                    uniforms={uniforms}
+                    vertexShader={particleVertexShader}
+                    fragmentShader={particleFragmentShader}
+                    transparent={true}
                 />
             </instancedMesh>
 
