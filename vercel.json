@@ -19,8 +19,12 @@
             "destination": "/src/server.js"
         },
         {
+            "source": "/assets/(.*)",
+            "destination": "/public/dashboard/dist/assets/$1"
+        },
+        {
             "source": "/(.*)",
-            "destination": "/public/dashboard/dist/$1"
+            "destination": "/public/dashboard/dist/index.html"
         }
     ]
 }
