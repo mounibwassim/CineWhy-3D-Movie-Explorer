@@ -17,13 +17,8 @@ const dataDir = path.join(__dirname, "..", "data");
 const context = loadDataset(dataDir);
 
 app.use(express.json({ limit: "1mb" }));
-app.use(express.static(path.join(__dirname, "..", "public")));
-app.use("/dashboard", express.static(path.join(__dirname, "..", "public", "dashboard", "dist")));
 
-app.get("/", (req, res) => {
-  res.redirect("/dashboard");
-});
-
+// API Config
 app.get("/api/config", (req, res) => {
   if (!context.dataset) {
     return res.json({
