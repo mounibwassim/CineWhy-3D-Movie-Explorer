@@ -130,6 +130,17 @@ function loadMovieLens100k(data_dir) {
             .filter(l => l.trim())
             .map(l => l.split("\t"));
 
+        // Load Classic Metadata (JSON sidecar)
+        let metadata = {};
+        try {
+            const metaPath = path.join(data_dir, "movie_metadata.json");
+            if (fs.existsSync(metaPath)) {
+                metadata = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+            }
+        } catch (e) {
+            console.error("Failed to load movie_metadata.json", e);
+        }
+
         const stats = {};
         ratingsRaw.forEach(r => {
             const mid = r[1];
@@ -149,6 +160,10 @@ function loadMovieLens100k(data_dir) {
             const year = parseYearFromTitle(item.title) || (item.releaseDate ? parseInt(item.releaseDate.split("-")[2], 10) : null);
             const genres = item.genresFlags.map((f, i) => f === 1 ? genreNames[i] : null).filter(Boolean);
 
+            // Inject Metadata with Fallbacks
+            const meta = metadata[item.id] || {};
+            // console.log(`[Loader] Loaded metadata for ${item.title}:`, meta.image_url ? "Has Image" : "No Image");
+
             return {
                 id: item.id,
                 title: item.title,
@@ -162,7 +177,11 @@ function loadMovieLens100k(data_dir) {
                 language: null,
                 quality_band: getQualityBand(rating, 5.0),
                 popularity_band: getPopularityBand(s.count, q1, q3),
-                runtime_category: null
+                runtime_category: null,
+                // CRITICAL: Ensure image_url is populated from sidecar, or null to trigger client-side placeholder
+                image_url: meta.image_url || null,
+                backdrop_url: meta.backdrop_url || null,
+                overview: meta.overview || `A classic film from ${year}.`
             };
         });
 

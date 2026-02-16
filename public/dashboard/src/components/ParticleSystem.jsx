@@ -1,12 +1,11 @@
 import React, { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { Float } from '@react-three/drei'
 
-export function ParticleSystem({ count = 200 }) {
+export function ParticleSystem({ count = 2000 }) { // Increased count for "Universe" feel
     const mesh = useRef()
-    const light = useRef()
     const { mouse, viewport } = useThree()
-
     const dummy = useMemo(() => new THREE.Object3D(), [])
 
     // Generate random initial positions and speeds
@@ -27,10 +26,9 @@ export function ParticleSystem({ count = 200 }) {
     useFrame((state) => {
         if (!mesh.current) return
 
-        // Interactive Mouse Follow
-        // Map mouse x/y (-1 to 1) to a target offset
-        const targetX = (mouse.x * viewport.width) / 10
-        const targetY = (mouse.y * viewport.height) / 10
+        // Map mouse x/y (-1 to 1) to a broad target area
+        const targetX = (mouse.x * viewport.width) / 2
+        const targetY = (mouse.y * viewport.height) / 2
 
         particles.forEach((particle, i) => {
             let { t, factor, speed, xFactor, yFactor, zFactor } = particle
@@ -38,24 +36,28 @@ export function ParticleSystem({ count = 200 }) {
             // Update time
             t = particle.t += speed / 2
 
-            // Calculate basic floating movement ("Matrix" drift)
+            // Calculate basic floating movement
             const a = Math.cos(t) + Math.sin(t * 1) / 10
             const b = Math.sin(t) + Math.cos(t * 2) / 10
 
-            // Apply mouse interaction (lerping for smooth follow)
+            // SWARM PHYSICS: Smoothly interpolate particle's mouse-offset towards the target
             particle.mx += (targetX - particle.mx) * 0.02
             particle.my += (targetY - particle.my) * 0.02
 
+            // Final position combines:
+            // 1. Random noise (xFactor)
+            // 2. Trigonometric drift (a, b)
+            // 3. Mouse influence (particle.mx/my)
             dummy.position.set(
                 (particle.mx / 10) * a + xFactor + Math.cos((t / 10) * factor) + (Math.sin(t * 1) * factor) / 10,
                 (particle.my / 10) * b + yFactor + Math.sin((t / 10) * factor) + (Math.cos(t * 2) * factor) / 10,
                 (particle.my / 10) * b + zFactor + Math.cos((t / 10) * factor) + (Math.sin(t * 3) * factor) / 10
             )
 
-            // "Matrix" Digital Rain Rotation effect
+            // Rotation
             dummy.rotation.set(t, t, t)
 
-            // Scale based on mouse proximity? Or just pulsing
+            // Dynamic Scale (pulse)
             const s = Math.cos(t) * 0.5 + 1
             dummy.scale.set(s, s, s)
 
@@ -68,7 +70,6 @@ export function ParticleSystem({ count = 200 }) {
     return (
         <>
             <instancedMesh ref={mesh} args={[null, null, count]}>
-                {/* Crystalline / tetradecahedron shape for a "tech" feel */}
                 <dodecahedronGeometry args={[0.2, 0]} />
                 <meshPhongMaterial
                     color="#00ffcc"
@@ -78,6 +79,20 @@ export function ParticleSystem({ count = 200 }) {
                     opacity={0.8}
                 />
             </instancedMesh>
+
+            {/* Floating 3D Symbols (Parallax Layer) */}
+            <Float speed={1.5} rotationIntensity={1.5} floatIntensity={2}>
+                {/* Abstract "Planet" Sphere */}
+                <mesh position={[-15, 5, -20]}>
+                    <sphereGeometry args={[2, 32, 32]} />
+                    <meshStandardMaterial color="#2d2d2d" wireframe />
+                </mesh>
+                {/* Floating Ring/Reel Abstract */}
+                <mesh position={[15, -5, -25]} rotation={[Math.PI / 4, 0, 0]}>
+                    <torusGeometry args={[3, 0.2, 16, 100]} />
+                    <meshStandardMaterial color="#00ffcc" transparent opacity={0.3} />
+                </mesh>
+            </Float>
         </>
     )
 }

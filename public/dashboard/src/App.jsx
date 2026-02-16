@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Info, Play, Filter, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Info, Play, Filter, X, ChevronLeft, ChevronRight, Home } from 'lucide-react'
 import VanillaTilt from 'vanilla-tilt'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow, Navigation, Pagination } from 'swiper/modules'
 import { Canvas } from '@react-three/fiber'
 import { FloatingIcon } from './components/FloatingIcon'
 import { ParticleSystem } from './components/ParticleSystem'
+import { LandingPage } from './components/LandingPage'
+import { PreferenceMatrix } from './components/PreferenceMatrix'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
+import { MovieProvider, useMovieContext } from './MovieContext'
 
 // Import Swiper styles
 import 'swiper/css'
@@ -36,17 +39,18 @@ const TiltCard = ({ movie, onClick }) => {
             className="relative group cursor-pointer aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl bg-secondary border border-white/10"
         >
             <img
-                src={movie.image_url || `https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                src={movie.image_url}
                 alt={movie.title}
                 className="w-full h-full object-cover"
                 onError={(e) => {
+                    // Fallback only if the DB URL fails
                     e.target.src = 'https://via.placeholder.com/500x750?text=' + encodeURIComponent(movie.title)
                 }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="absolute bottom-0 p-6 w-full">
                     <h3 className="text-white font-bold text-xl leading-tight drop-shadow-lg">{movie.title}</h3>
-                    <p className="text-primary font-medium text-sm mt-1">{movie.genres.join(', ')}</p>
+                    <p className="text-primary font-medium text-sm mt-1">{movie.genres ? movie.genres.join(', ') : ''}</p>
                 </div>
             </div>
         </div>
@@ -74,7 +78,7 @@ const DetailModal = ({ movie, onClose }) => {
 
                 <div className="w-full md:w-5/12 relative group">
                     <img
-                        src={movie.image_url || `https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                        src={movie.image_url}
                         alt={movie.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -96,7 +100,7 @@ const DetailModal = ({ movie, onClose }) => {
                         <div className="flex flex-wrap gap-4 text-base font-semibold text-white/60">
                             <span className="px-3 py-1 bg-primary/10 text-primary rounded-md border border-primary/20">{movie.year}</span>
                             <span className="px-3 py-1 bg-white/5 rounded-md border border-white/10">{movie.genres.join(' • ')}</span>
-                            <span className="px-3 py-1 bg-white/5 rounded-md border border-white/10">⭐ {movie.rating} / 10</span>
+                            <span className="px-3 py-1 bg-white/5 rounded-md border border-white/10">⭐ {movie.rating.toFixed(1)} / 10</span>
                         </div>
                     </div>
 
@@ -132,28 +136,26 @@ const DetailModal = ({ movie, onClose }) => {
     )
 }
 
-export default function App() {
-    const [movies, setMovies] = useState([])
-    const [heroMovie, setHeroMovie] = useState(null)
+function MainContent() {
+    const { view, setView, movies, setMovies, heroMovie, setHeroMovie, setLastCriteria } = useMovieContext();
     const [selectedMovie, setSelectedMovie] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(false)
     const [activeBackdrop, setActiveBackdrop] = useState('')
 
-    useEffect(() => {
-        fetchRecommendations()
-    }, [])
-
-    const fetchRecommendations = async () => {
+    const handleSearch = async (criteria) => {
         setLoading(true)
+        setView('results')
+        setLastCriteria(criteria)
         try {
             const res = await fetch('/api/recommend', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    preferredGenres: [],
+                    preferredGenres: criteria.preferredGenres,
                     excludedGenres: [],
-                    yearRange: [2000, 2026],
+                    yearRange: criteria.yearRange || [2000, 2026],
                     minRating: 0,
+                    popularityPref: criteria.popularityPref,
                     topK: 20
                 })
             })
@@ -178,20 +180,21 @@ export default function App() {
     }
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary selection:text-black overflow-x-hidden">
+        <div className="min-h-screen bg-[#050505] text-white selection:bg-primary selection:text-black overflow-x-hidden font-sans">
             {/* Immersive Background with Particles */}
             <div className="fixed inset-0 z-0 transition-opacity duration-1000 pointer-events-none">
                 <Canvas camera={{ position: [0, 0, 30], fov: 75 }}>
                     <color attach="background" args={['#050505']} />
                     <ambientLight intensity={0.5} />
-                    <ParticleSystem count={300} />
+                    <ParticleSystem count={2000} />
                     <EffectComposer>
                         <Bloom luminanceThreshold={0.5} luminanceSmoothing={0.9} height={300} />
                     </EffectComposer>
                 </Canvas>
             </div>
 
-            <div className="fixed inset-0 z-0 transition-opacity duration-1000 opacity-40">
+            {/* Dynamic Backdrop (Visible only in Results view) */}
+            <div className={`fixed inset-0 z-0 transition-opacity duration-1000 ${view === 'results' ? 'opacity-40' : 'opacity-0'}`}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeBackdrop}
@@ -205,110 +208,152 @@ export default function App() {
                 <div className="absolute inset-0 bg-gradient-to-b from-[#050505]/40 via-[#050505]/80 to-[#050505]" />
             </div>
 
-            <nav className="fixed top-0 w-full z-40 p-8 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm">
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 relative">
-                        <Canvas>
-                            <FloatingIcon />
-                        </Canvas>
+            {/* Navigation Bar */}
+            <nav className="fixed top-0 w-full z-40 p-8 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent backdrop-blur-sm pointer-events-none">
+                <div className="flex items-center gap-4 pointer-events-auto cursor-pointer" onClick={() => setView('landing')}>
+                    {view !== 'landing' && (
+                        <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
+                            CINE<span className="text-primary italic">WHY</span>
+                            <span className="w-2 h-2 bg-primary rounded-full animate-pulse ml-1" />
+                        </h1>
+                    )}
+                </div>
+                {view === 'results' && (
+                    <div className="flex gap-4 pointer-events-auto">
+                        <button onClick={() => setView('preferences')} className="px-4 py-2 glass rounded-full text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center gap-2">
+                            <Filter className="w-4 h-4" /> New Search
+                        </button>
                     </div>
-                    <h1 className="text-3xl font-black tracking-tighter text-white flex items-center gap-2">
-                        CINE<span className="text-primary italic">WHY</span>
-                        <span className="w-2 h-2 bg-primary rounded-full animate-pulse ml-1" />
-                    </h1>
-                </div>
-                <div className="flex gap-8 text-sm font-bold uppercase tracking-widest text-white/60">
-                    <a href="#" className="text-white border-b-2 border-primary pb-1">3D Explore</a>
-                    <a href="#" className="hover:text-white transition-colors">Classic Lists</a>
-                    <a href="#" className="hover:text-white transition-colors">Advanced Search</a>
-                </div>
+                )}
             </nav>
 
-            {/* Hero Section */}
-            <section className="relative h-screen w-full items-center flex z-10 p-8 md:p-24">
-                {heroMovie && (
-                    <div className="max-w-5xl">
-                        <motion.div
-                            initial={{ y: 30, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 1 }}
-                        >
-                            <div className="flex items-center gap-3 mb-6 text-primary font-black uppercase tracking-[0.3em] text-xs">
-                                <span className="w-12 h-px bg-primary" />
-                                Expert's Choice #1
-                            </div>
-                            <h1 className="text-7xl md:text-[10rem] font-black mb-8 leading-[0.85] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                                {heroMovie.title}
-                            </h1>
-                            <p className="text-xl md:text-3xl text-white/60 mb-12 line-clamp-3 font-light max-w-2xl leading-relaxed">
-                                {heroMovie.overview}
-                            </p>
-                            <div className="flex gap-6">
-                                <button onClick={() => setSelectedMovie(heroMovie)} className="px-10 py-5 bg-primary text-black font-black rounded-xl flex items-center gap-3 hover:scale-105 transition-all shadow-[0_10px_40px_rgba(212,175,55,0.3)]">
-                                    <Play className="w-6 h-6 fill-current" />
-                                    EXPERIENCE NOW
-                                </button>
-                                <button className="px-10 py-5 glass text-white font-bold rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all border border-white/20">
-                                    <Info className="w-6 h-6" />
-                                    DETAILS
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </section>
+            {/* VIEW ROUTING */}
+            <AnimatePresence mode="wait">
 
-            {/* The 3D Coverflow Grid */}
-            <main className="pb-32 relative z-20">
-                <div className="px-8 md:px-24 mb-16 flex items-end justify-between">
-                    <div>
-                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 italic">The Future Gallery</h2>
-                        <p className="text-white/40 font-medium tracking-widest uppercase text-xs">Flick through your top 20 recommendations</p>
-                    </div>
-                    <div className="flex gap-4 mb-2">
-                        <button className="p-4 glass rounded-full hover:bg-primary hover:text-black transition-all swiper-prev">
-                            <ChevronLeft className="w-6 h-6" />
-                        </button>
-                        <button className="p-4 glass rounded-full hover:bg-primary hover:text-black transition-all swiper-next">
-                            <ChevronRight className="w-6 h-6" />
-                        </button>
-                    </div>
-                </div>
-
-                {loading ? (
-                    <div className="flex justify-center items-center h-96">
-                        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                    </div>
-                ) : (
-                    <Swiper
-                        effect={'coverflow'}
-                        grabCursor={true}
-                        centeredSlides={true}
-                        slidesPerView={'auto'}
-                        loop={true}
-                        onSlideChange={handleSlideChange}
-                        coverflowEffect={{
-                            rotate: 30,
-                            stretch: 0,
-                            depth: 100,
-                            modifier: 2,
-                            slideShadows: true,
-                        }}
-                        navigation={{
-                            nextEl: '.swiper-next',
-                            prevEl: '.swiper-prev',
-                        }}
-                        modules={[EffectCoverflow, Navigation, Pagination]}
-                        className="w-full py-12"
+                {/* 1. LANDING PAGE */}
+                {view === 'landing' && (
+                    <motion.div
+                        key="landing"
+                        exit={{ opacity: 0, y: -20 }}
+                        className="absolute inset-0 z-10"
                     >
-                        {movies.map((movie) => (
-                            <SwiperSlide key={movie.id} className="w-[300px] md:w-[450px]">
-                                <TiltCard movie={movie} onClick={setSelectedMovie} />
-                            </SwiperSlide>
-                        ))}
-                    </Swiper>
+                        <LandingPage onStart={() => setView('preferences')} />
+                    </motion.div>
                 )}
-            </main>
+
+                {/* 2. PREFERENCE MATRIX */}
+                {view === 'preferences' && (
+                    <motion.div
+                        key="preferences"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="absolute inset-0 z-20 overflow-y-auto"
+                    >
+                        <PreferenceMatrix onSearch={handleSearch} />
+                    </motion.div>
+                )}
+
+                {/* 3. RESULTS DASHBOARD */}
+                {view === 'results' && (
+                    <motion.div
+                        key="results"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="relative z-10"
+                    >
+                        {loading ? (
+                            <div className="flex flex-col justify-center items-center h-screen">
+                                <div className="w-24 h-24 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-8" />
+                                <h2 className="text-2xl font-black text-white animate-pulse">Consulting the Oracle...</h2>
+                                <p className="text-white/40 mt-4 animate-pulse">Accessing Classic Database & Modern APIs</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Hero Section */}
+                                <section className="relative h-screen w-full items-center flex z-10 p-8 md:p-24">
+                                    {heroMovie && (
+                                        <div className="max-w-5xl">
+                                            <motion.div
+                                                initial={{ y: 30, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ duration: 1 }}
+                                            >
+                                                <div className="flex items-center gap-3 mb-6 text-primary font-black uppercase tracking-[0.3em] text-xs">
+                                                    <span className="w-12 h-px bg-primary" />
+                                                    Expert's Choice #1
+                                                </div>
+                                                <h1 className="text-6xl md:text-[8rem] font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+                                                    {heroMovie.title}
+                                                </h1>
+                                                <p className="text-xl md:text-2xl text-white/60 mb-12 line-clamp-3 font-light max-w-2xl leading-relaxed">
+                                                    {heroMovie.overview}
+                                                </p>
+                                                <div className="flex gap-6">
+                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-10 py-5 bg-primary text-black font-black rounded-xl flex items-center gap-3 hover:scale-105 transition-all shadow-[0_10px_40px_rgba(0,255,204,0.3)]">
+                                                        <Play className="w-6 h-6 fill-current" />
+                                                        EXPERIENCE NOW
+                                                    </button>
+                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-10 py-5 glass text-white font-bold rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all border border-white/20">
+                                                        <Info className="w-6 h-6" />
+                                                        DETAILS
+                                                    </button>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                    )}
+                                </section>
+
+                                {/* The 3D Coverflow Grid */}
+                                <main className="pb-32 relative z-20">
+                                    <div className="px-8 md:px-24 mb-16 flex items-end justify-between">
+                                        <div>
+                                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic">The Future Gallery</h2>
+                                            <p className="text-white/40 font-medium tracking-widest uppercase text-xs">Flick through your top 20 recommendations</p>
+                                        </div>
+                                        <div className="flex gap-4 mb-2">
+                                            <button className="p-4 glass rounded-full hover:bg-primary hover:text-black transition-all swiper-prev">
+                                                <ChevronLeft className="w-6 h-6" />
+                                            </button>
+                                            <button className="p-4 glass rounded-full hover:bg-primary hover:text-black transition-all swiper-next">
+                                                <ChevronRight className="w-6 h-6" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <Swiper
+                                        effect={'coverflow'}
+                                        grabCursor={true}
+                                        centeredSlides={true}
+                                        slidesPerView={'auto'}
+                                        loop={true}
+                                        onSlideChange={handleSlideChange}
+                                        coverflowEffect={{
+                                            rotate: 30,
+                                            stretch: 0,
+                                            depth: 100,
+                                            modifier: 2,
+                                            slideShadows: true,
+                                        }}
+                                        navigation={{
+                                            nextEl: '.swiper-next',
+                                            prevEl: '.swiper-prev',
+                                        }}
+                                        modules={[EffectCoverflow, Navigation, Pagination]}
+                                        className="w-full py-12"
+                                    >
+                                        {movies.map((movie) => (
+                                            <SwiperSlide key={movie.id} className="w-[300px] md:w-[450px]">
+                                                <TiltCard movie={movie} onClick={setSelectedMovie} />
+                                            </SwiperSlide>
+                                        ))}
+                                    </Swiper>
+                                </main>
+                            </>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Detail Modal */}
             <AnimatePresence>
@@ -317,9 +362,20 @@ export default function App() {
                 )}
             </AnimatePresence>
 
-            <footer className="p-12 text-center text-white/20 font-mono text-xs uppercase tracking-[0.5em] border-t border-white/5 bg-black/40 relative z-30">
-                Engineered by CineWhy Expert Shell v2.5 // (c) 2026
-            </footer>
+            {/* Footer - Only visible in Landing or Results */}
+            {view !== 'preferences' && (
+                <footer className="p-12 text-center text-white/20 font-mono text-xs uppercase tracking-[0.5em] border-t border-white/5 bg-black/40 relative z-30">
+                    Engineered by CineWhy Expert Shell v2.5 // (c) 2026
+                </footer>
+            )}
         </div>
+    )
+}
+
+export default function App() {
+    return (
+        <MovieProvider>
+            <MainContent />
+        </MovieProvider>
     )
 }
