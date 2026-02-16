@@ -1,162 +1,143 @@
-import React, { useRef, useMemo } from 'react'
+import React, { useRef, useMemo, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { Float } from '@react-three/drei'
-import glsl from 'vite-plugin-glsl'
+import { Float, Stars } from '@react-three/drei'
 
-const particleVertexShader = `
-uniform float uTime;
-varying vec3 vPosition;
-varying float vGlitch;
-
-void main() {
-  vPosition = position;
-  
-  // Glitch effect on position
-  float glitch = sin(uTime * 10.0 + position.y * 5.0) * 0.02;
-  vGlitch = glitch;
-  
-  vec3 pos = position;
-  pos.x += glitch;
-  
-  // Instance handling + standard view projection
-  #include <begin_vertex>
-  #include <project_vertex>
-}
-`
-
-const particleFragmentShader = `
-uniform float uTime;
-varying vec3 vPosition;
-varying float vGlitch;
-
-void main() {
-  // Matrix Green/Cyan Logic
-  vec3 color = vec3(0.0, 1.0, 0.8); // Cyan
-  
-  // Pulse logic
-  float pulse = (sin(uTime * 2.0) + 1.0) * 0.5;
-  
-  // Glitch flash
-  if (abs(vGlitch) > 0.015) {
-      color = vec3(1.0, 1.0, 1.0); // White flash
-  }
-  
-  gl_FragColor = vec4(color, 0.8 * pulse + 0.2);
-}
-`
-
-export function ParticleSystem({ count = 2000 }) { // Increased count for "Universe" feel
-    const mesh = useRef()
+export function ParticleSystem({ count = 3000 }) {
+    const points = useRef()
     const { mouse, viewport } = useThree()
-    const dummy = useMemo(() => new THREE.Object3D(), [])
 
-    // Shader Uniforms
-    const uniforms = useMemo(() => ({
-        uTime: { value: 0 }
-    }), [])
-
-    // Generate random initial positions and speeds
-    const particles = useMemo(() => {
-        const temp = []
+    // Generate particles
+    const particlesPosition = useMemo(() => {
+        const positions = new Float32Array(count * 3)
         for (let i = 0; i < count; i++) {
-            const t = Math.random() * 100
-            const factor = 20 + Math.random() * 100
-            const speed = 0.01 + Math.random() / 200
-            const xFactor = -50 + Math.random() * 100
-            const yFactor = -50 + Math.random() * 100
-            const zFactor = -50 + Math.random() * 100
-            temp.push({ t, factor, speed, xFactor, yFactor, zFactor, mx: 0, my: 0 })
+            positions[i * 3] = (Math.random() - 0.5) * 100
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 100
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 100
         }
-        return temp
+        return positions
     }, [count])
 
     useFrame((state) => {
-        if (!mesh.current) return
+        if (!points.current) return
 
-        // Update Shader Time
-        uniforms.uTime.value = state.clock.elapsedTime
+        const time = state.clock.getElapsedTime()
 
-        // Map mouse x/y (-1 to 1) to a broad target area
+        // --- 1. MOUSE SWERVE FORMULA ---
+        // Calculate target based on mouse position
         const targetX = (mouse.x * viewport.width) / 2
         const targetY = (mouse.y * viewport.height) / 2
 
-        particles.forEach((particle, i) => {
-            let { t, factor, speed, xFactor, yFactor, zFactor } = particle
+        // Rotate the entire points system slightly towards the mouse
+        // giving the "swerve" effect across the screen.
+        points.current.rotation.x = THREE.MathUtils.lerp(points.current.rotation.x, -targetY * 0.02, 0.05)
+        points.current.rotation.y = THREE.MathUtils.lerp(points.current.rotation.y, targetX * 0.02, 0.05)
 
-            // Update time
-            t = particle.t += speed / 2
-
-            // Calculate basic floating movement
-            const a = Math.cos(t) + Math.sin(t * 1) / 10
-            const b = Math.sin(t) + Math.cos(t * 2) / 10
-
-            // SWARM PHYSICS: Smoothly interpolate particle's mouse-offset towards the target
-            particle.mx += (targetX - particle.mx) * 0.02
-            particle.my += (targetY - particle.my) * 0.02
-
-            // Final position combines:
-            // 1. Random noise (xFactor)
-            // 2. Trigonometric drift (a, b)
-            // 3. Mouse influence (particle.mx/my)
-            dummy.position.set(
-                (particle.mx / 10) * a + xFactor + Math.cos((t / 10) * factor) + (Math.sin(t * 1) * factor) / 10,
-                (particle.my / 10) * b + yFactor + Math.sin((t / 10) * factor) + (Math.cos(t * 2) * factor) / 10,
-                (particle.my / 10) * b + zFactor + Math.cos((t / 10) * factor) + (Math.sin(t * 3) * factor) / 10
-            )
-
-            // Rotation
-            dummy.rotation.set(t, t, t)
-
-            // Dynamic Scale (pulse)
-            const s = Math.cos(t) * 0.5 + 1
-            dummy.scale.set(s, s, s)
-
-            dummy.updateMatrix()
-            mesh.current.setMatrixAt(i, dummy.matrix)
-        })
-        mesh.current.instanceMatrix.needsUpdate = true
+        // Internal wave motion
+        const positions = points.current.geometry.attributes.position.array
+        for (let i = 0; i < count; i++) {
+            // Slight wave modification
+            // We generally keep positions static in buffer but move the container
+            // To make them "breathing", we could use a shader, but doing CPU lerp for 3000 points is cheap enough here if needed.
+            // For "Swerve", rotating the container (lines 28-29) is the most performant and "feeling" correct way.
+        }
     })
 
     return (
         <>
-            <instancedMesh ref={mesh} args={[null, null, count]}>
-                <dodecahedronGeometry args={[0.2, 0]} />
-                {/* Custom GLSL Shader Material */}
-                <shaderMaterial
-                    uniforms={uniforms}
-                    vertexShader={particleVertexShader}
-                    fragmentShader={particleFragmentShader}
-                    transparent={true}
+            {/* 1. MATRIX STARS (POINTS) */}
+            <points ref={points}>
+                <bufferGeometry>
+                    <bufferAttribute
+                        attach="attributes-position"
+                        count={particlesPosition.length / 3}
+                        array={particlesPosition}
+                        itemSize={3}
+                    />
+                </bufferGeometry>
+                <pointsMaterial
+                    size={0.15}
+                    color="#00ffcc"
+                    transparent
+                    opacity={0.8}
+                    sizeAttenuation={true}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
                 />
-            </instancedMesh>
+            </points>
 
-            {/* Floating 3D Symbols (Parallax Layer) */}
-            <Float speed={2} rotationIntensity={1.5} floatIntensity={2}>
-                {/* The Sun (Glowing Core) */}
-                <mesh position={[20, 10, -30]}>
-                    <sphereGeometry args={[4, 32, 32]} />
-                    <meshBasicMaterial color="#ffcc00" toneMapped={false} />
-                    <pointLight intensity={2} distance={50} color="#ffaa00" />
+            {/* 2. THE SUN & EARTH (High Quality) */}
+            <Float speed={1.5} rotationIntensity={0.5} floatIntensity={1}>
+
+                {/* SUN */}
+                <mesh position={[25, 12, -40]}>
+                    <sphereGeometry args={[8, 64, 64]} />
+                    <meshBasicMaterial color="#ffaa00" toneMapped={false} />
+                    <pointLight intensity={3} distance={100} color="#ffaa00" />
+                    {/* Sun Glow/Halo - Simple cheap trick with a larger inverted sphere or sprite? 
+                        Let's just use a pointLight for now and maybe a larger transparent sphere for glow */}
+                    <mesh scale={[1.2, 1.2, 1.2]}>
+                        <sphereGeometry args={[8, 32, 32]} />
+                        <meshBasicMaterial color="#ff4400" transparent opacity={0.3} side={THREE.BackSide} />
+                    </mesh>
                 </mesh>
 
-                {/* The Earth (Wireframe Cyber-Planet) */}
-                <mesh position={[-18, -8, -25]} rotation={[0.5, 0.5, 0]}>
-                    <sphereGeometry args={[3, 32, 32]} />
-                    <meshStandardMaterial color="#00aaff" wireframe emissive="#0044aa" emissiveIntensity={0.5} />
-                </mesh>
+                {/* EARTH */}
+                <group position={[-20, -10, -30]} rotation={[0, 0, 0.4]}>
+                    <mesh>
+                        <sphereGeometry args={[5, 64, 64]} />
+                        <meshStandardMaterial
+                            color="#2244ff"
+                            roughness={0.8}
+                            metalness={0.1}
+                            emissive="#001133"
+                        />
+                    </mesh>
+                    {/* Atmosphere Glow */}
+                    <mesh scale={[1.1, 1.1, 1.1]}>
+                        <sphereGeometry args={[5, 32, 32]} />
+                        <meshBasicMaterial color="#4488ff" transparent opacity={0.15} side={THREE.BackSide} />
+                    </mesh>
+                </group>
 
-                {/* Floating Ring/Reel Abstract */}
-                <mesh position={[10, -15, -20]} rotation={[Math.PI / 4, 0, 0]}>
-                    <torusGeometry args={[2, 0.1, 16, 50]} />
-                    <meshStandardMaterial color="#00ffcc" transparent opacity={0.4} />
-                </mesh>
+                {/* 3. FLOATING CINEMA SYMBOLS */}
 
-                {/* Popcorn Bucket Abstract (Cylinder) */}
-                <mesh position={[-12, 15, -28]} rotation={[0.2, 0, 0.5]}>
-                    <cylinderGeometry args={[0.8, 0.5, 1.5, 16]} />
-                    <meshStandardMaterial color="#ff5555" wireframe />
-                </mesh>
+                {/* Movie Reel (Torus + Cylinders) */}
+                <group position={[15, -15, -25]} rotation={[Math.PI / 3, 0, 0]}>
+                    <mesh>
+                        <torusGeometry args={[3, 0.2, 16, 100]} />
+                        <meshStandardMaterial color="#888" metalness={0.8} roughness={0.2} />
+                    </mesh>
+                    <mesh rotation={[0, 0, Math.PI / 2]}>
+                        <cylinderGeometry args={[0.1, 0.1, 6, 8]} />
+                        <meshStandardMaterial color="#888" />
+                    </mesh>
+                    <mesh>
+                        <cylinderGeometry args={[0.1, 0.1, 6, 8]} />
+                        <meshStandardMaterial color="#888" />
+                    </mesh>
+                </group>
+
+                {/* Popcorn Bucket (Cylinder) */}
+                <group position={[-15, 10, -25]} rotation={[0.2, 0.2, 0]}>
+                    <mesh>
+                        <cylinderGeometry args={[1.5, 1, 3, 32]} />
+                        <meshStandardMaterial color="#dddddd" />
+                    </mesh>
+                    {/* Red Stripes */}
+                    <mesh position={[0, 0, 0.05]} scale={[1.01, 1, 1.01]}>
+                        {/* Simplified stripe effect using a wireframe helper or just texture? 
+                            Let's keep it simple geometry for now to avoid texture loading issues */}
+                        <cylinderGeometry args={[1.5, 1, 3, 8]} />
+                        <meshStandardMaterial color="#ff0000" wireframe />
+                    </mesh>
+                    {/* "Popcorn" particles on top */}
+                    <mesh position={[0, 1.6, 0]}>
+                        <dodecahedronGeometry args={[1.5, 0]} />
+                        <meshStandardMaterial color="#ffeeaa" roughness={0.5} />
+                    </mesh>
+                </group>
+
             </Float>
         </>
     )
