@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Rule-based expert system for movie recommendation (no ML)",
-  "main": "src/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node server.js",
+    "build": "cd public/dashboard && npm install --legacy-peer-deps && npm run build",
     "test": "node tests/run_tests.js"
   },
   "dependencies": {

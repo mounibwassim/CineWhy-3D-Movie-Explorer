@@ -1,9 +1,9 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import { loadDataset } from "./engine/loader.js";
-import { recommend } from "./engine/infer.js";
-import { clamp } from "./engine/utils.js";
+import { loadDataset } from "./src/engine/loader.js";
+import { recommend } from "./src/engine/infer.js";
+import { clamp } from "./src/engine/utils.js";
 import os from "os";
 
 
@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const dataDir = path.join(__dirname, "..", "data");
+const dataDir = path.join(__dirname, "data");
 // Prioritize modern_movies.csv if available
 const context = loadDataset(dataDir);
 
