@@ -132,16 +132,30 @@ export function ParticleSystem({ count = 2000 }) { // Increased count for "Unive
             </instancedMesh>
 
             {/* Floating 3D Symbols (Parallax Layer) */}
-            <Float speed={1.5} rotationIntensity={1.5} floatIntensity={2}>
-                {/* Abstract "Planet" Sphere */}
-                <mesh position={[-15, 5, -20]}>
-                    <sphereGeometry args={[2, 32, 32]} />
-                    <meshStandardMaterial color="#2d2d2d" wireframe />
+            <Float speed={2} rotationIntensity={1.5} floatIntensity={2}>
+                {/* The Sun (Glowing Core) */}
+                <mesh position={[20, 10, -30]}>
+                    <sphereGeometry args={[4, 32, 32]} />
+                    <meshBasicMaterial color="#ffcc00" toneMapped={false} />
+                    <pointLight intensity={2} distance={50} color="#ffaa00" />
                 </mesh>
+
+                {/* The Earth (Wireframe Cyber-Planet) */}
+                <mesh position={[-18, -8, -25]} rotation={[0.5, 0.5, 0]}>
+                    <sphereGeometry args={[3, 32, 32]} />
+                    <meshStandardMaterial color="#00aaff" wireframe emissive="#0044aa" emissiveIntensity={0.5} />
+                </mesh>
+
                 {/* Floating Ring/Reel Abstract */}
-                <mesh position={[15, -5, -25]} rotation={[Math.PI / 4, 0, 0]}>
-                    <torusGeometry args={[3, 0.2, 16, 100]} />
-                    <meshStandardMaterial color="#00ffcc" transparent opacity={0.3} />
+                <mesh position={[10, -15, -20]} rotation={[Math.PI / 4, 0, 0]}>
+                    <torusGeometry args={[2, 0.1, 16, 50]} />
+                    <meshStandardMaterial color="#00ffcc" transparent opacity={0.4} />
+                </mesh>
+
+                {/* Popcorn Bucket Abstract (Cylinder) */}
+                <mesh position={[-12, 15, -28]} rotation={[0.2, 0, 0.5]}>
+                    <cylinderGeometry args={[0.8, 0.5, 1.5, 16]} />
+                    <meshStandardMaterial color="#ff5555" wireframe />
                 </mesh>
             </Float>
         </>

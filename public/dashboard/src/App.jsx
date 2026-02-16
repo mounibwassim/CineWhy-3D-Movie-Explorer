@@ -11,6 +11,7 @@ import { LandingPage } from './components/LandingPage'
 import { PreferenceMatrix } from './components/PreferenceMatrix'
 import { EffectComposer, Bloom } from '@react-three/postprocessing'
 import { MovieProvider, useMovieContext } from './MovieContext'
+import { TiltCard } from './components/TiltCard'
 
 // Import Swiper styles
 import 'swiper/css'
@@ -18,44 +19,7 @@ import 'swiper/css/effect-coverflow'
 import 'swiper/css/navigation'
 import 'swiper/css/pagination'
 
-const TiltCard = ({ movie, onClick }) => {
-    const tiltRef = useRef(null)
-
-    useEffect(() => {
-        if (tiltRef.current) {
-            VanillaTilt.init(tiltRef.current, {
-                max: 15,
-                speed: 400,
-                glare: true,
-                'max-glare': 0.3,
-            })
-        }
-    }, [])
-
-    return (
-        <div
-            ref={tiltRef}
-            onClick={() => onClick(movie)}
-            className="relative group cursor-pointer aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl bg-secondary border border-white/10"
-        >
-            <img
-                src={movie.image_url}
-                alt={movie.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                    // Fallback only if the DB URL fails
-                    e.target.src = 'https://via.placeholder.com/500x750?text=' + encodeURIComponent(movie.title)
-                }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-0 p-6 w-full">
-                    <h3 className="text-white font-bold text-xl leading-tight drop-shadow-lg">{movie.title}</h3>
-                    <p className="text-primary font-medium text-sm mt-1">{movie.genres ? movie.genres.join(', ') : ''}</p>
-                </div>
-            </div>
-        </div>
-    )
-}
+// TiltCard moved to components/TiltCard.jsx
 
 const DetailModal = ({ movie, onClose }) => {
     if (!movie) return null;
@@ -313,20 +277,20 @@ function MainContent() {
                                                     <span className="w-12 h-px bg-primary" />
                                                     Expert's Choice #1
                                                 </div>
-                                                <h1 className="text-6xl md:text-[8rem] font-black mb-8 leading-[0.9] tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] font-['Montserrat']">
+                                                <h1 className="text-4xl md:text-6xl font-black mb-6 leading-tight tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] font-['Montserrat']">
                                                     {heroMovie.title}
                                                 </h1>
-                                                <p className="text-xl md:text-2xl text-white/60 mb-12 line-clamp-3 font-light max-w-2xl leading-relaxed">
+                                                <p className="text-lg text-white/70 mb-8 line-clamp-3 font-light max-w-2xl leading-relaxed">
                                                     {heroMovie.overview}
                                                 </p>
-                                                <div className="flex gap-6">
-                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-10 py-5 bg-primary text-black font-black rounded-xl flex items-center gap-3 hover:scale-105 transition-all shadow-[0_10px_40px_rgba(0,255,204,0.3)]">
-                                                        <Play className="w-6 h-6 fill-current" />
-                                                        EXPERIENCE NOW
+                                                <div className="flex gap-4">
+                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-8 py-4 bg-primary text-black font-bold rounded-lg flex items-center gap-2 hover:scale-105 transition-all shadow-[0_0_20px_rgba(0,255,204,0.3)] text-sm tracking-widest uppercase">
+                                                        <Play className="w-4 h-4 fill-current" />
+                                                        Experience Now
                                                     </button>
-                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-10 py-5 glass text-white font-bold rounded-xl flex items-center gap-3 hover:bg-white/10 transition-all border border-white/20">
-                                                        <Info className="w-6 h-6" />
-                                                        DETAILS
+                                                    <button onClick={() => setSelectedMovie(heroMovie)} className="px-8 py-4 glass text-white font-bold rounded-lg flex items-center gap-2 hover:bg-white/10 transition-all border border-white/10 text-sm tracking-widest uppercase">
+                                                        <Info className="w-4 h-4" />
+                                                        Details
                                                     </button>
                                                 </div>
                                             </motion.div>
@@ -338,8 +302,8 @@ function MainContent() {
                                 <main className="pb-32 relative z-20">
                                     <div className="px-8 md:px-24 mb-16 flex items-end justify-between">
                                         <div>
-                                            <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-4 italic font-['Montserrat']">The Future Gallery</h2>
-                                            <p className="text-white/40 font-medium tracking-widest uppercase text-xs">Flick through your top 20 recommendations</p>
+                                            <h2 className="text-3xl font-bold tracking-tight mb-2 font-['Montserrat']">The Future Gallery</h2>
+                                            <p className="text-white/40 font-medium tracking-widest uppercase text-[10px]">Top 20 Recommendations</p>
                                         </div>
                                         <div className="flex gap-4 mb-2">
                                             <button className="p-4 glass rounded-full hover:bg-primary hover:text-black transition-all swiper-prev">
