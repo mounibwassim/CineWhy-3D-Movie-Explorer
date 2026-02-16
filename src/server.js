@@ -4,6 +4,8 @@ import { fileURLToPath } from "url";
 import { loadDataset } from "./engine/loader.js";
 import { recommend } from "./engine/infer.js";
 import { clamp } from "./engine/utils.js";
+import os from "os";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,10 +13,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const dataDir = path.join(__dirname, "..", "data");
+// Prioritize modern_movies.csv if available
 const context = loadDataset(dataDir);
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
+app.use("/dashboard", express.static(path.join(__dirname, "..", "public", "dashboard", "dist")));
+
+app.get("/", (req, res) => {
+  res.redirect("/dashboard");
+});
 
 app.get("/api/config", (req, res) => {
   if (!context.dataset) {
@@ -67,6 +75,10 @@ app.post("/api/recommend", (req, res) => {
       title: rec.movie.title,
       year: rec.movie.year,
       genres: rec.movie.genres,
+      overview: rec.movie.overview,
+      poster_path: rec.movie.poster_path,
+      image_url: rec.movie.image_url,
+      backdrop_url: rec.movie.backdrop_url,
       rating: rec.movie[context.ratingField],
       ratingCount: rec.movie[context.ratingCountField],
       popularity: rec.movie[context.popularityField],
@@ -92,6 +104,23 @@ app.post("/api/recommend", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  const networkInterfaces = os.networkInterfaces();
+  let networkUrl = "";
+  for (const name of Object.keys(networkInterfaces)) {
+    for (const net of networkInterfaces[name]) {
+      if (net.family === "IPv4" && !net.internal) {
+        networkUrl = `http://${net.address}:${PORT}`;
+        break;
+      }
+    }
+    if (networkUrl) break;
+  }
+
+  console.log(`\n\x1b[1m\x1b[32m[Movie Expert System]\x1b[0m`);
+  console.log(`  Local:   http://localhost:${PORT}`);
+  if (networkUrl) {
+    console.log(`  Network: ${networkUrl}`);
+  }
+  console.log(`\n\x1b[2mPress Ctrl+C to stop\x1b[0m\n`);
 });

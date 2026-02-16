@@ -1,11 +1,26 @@
 {
     "version": 2,
-    "name": "cine-why",
-    "public": true,
-    "cleanUrls": true,
-    "framework": null,
-    "buildCommand": null,
-    "devCommand": null,
-    "installCommand": null,
-    "outputDirectory": "public"
+    "builds": [
+        {
+            "src": "src/server.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "public/dashboard/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/src/server.js"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/public/dashboard/dist/$1"
+        }
+    ]
 }

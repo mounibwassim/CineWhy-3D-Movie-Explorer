@@ -12,13 +12,19 @@ class Movie:
     genres: List[str]
     rating: float
     rating_count: int
-    popularity: Optional[float] = None
-    runtime: Optional[float] = None
-    language: Optional[str] = None
-    quality_band: str = "unknown"
-    popularity_band: str = "unknown"
-    runtime_category: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    popularity: float
+    runtime: Optional[float]
+    language: Optional[str]
+    quality_band: str
+    popularity_band: str
+    runtime_category: Optional[str]
+    overview: str = ""
+    poster_path: Optional[str] = None
+    metadata: Dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = {}
 
 
 @dataclass

@@ -1,17 +1,9 @@
 services:
   - type: web
-    name: cine-why-api
+    name: movie-expert-system
     env: node
-    plan: free
-    buildCommand: npm install
+    buildCommand: cd public/dashboard && npm install --legacy-peer-deps && npm run build && cd ../.. && npm install
     startCommand: npm start
     envVars:
       - key: NODE_VERSION
-        value: 18
-
-  - type: web
-    name: cine-why-streamlit
-    env: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run app/streamlit_app.py --server.port $PORT --server.address 0.0.0.0
+        value: 20.11.0

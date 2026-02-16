@@ -262,6 +262,8 @@ def load_tmdb(data_dir: str) -> DataContext:
             Movie(
                 id=str(row.get("id") or row.get("movie_id") or row.get("title")),
                 title=row.get("title") or row.get("original_title") or "Unknown",
+                overview=str(row.get("overview", "")),
+                poster_path=row.get("poster_path") if not pd.isna(row.get("poster_path")) else None,
                 year=int(row["year"]) if not pd.isna(row["year"]) else None,
                 decade=int(row["decade"]) if not pd.isna(row["decade"]) else None,
                 genres=row["genres_list"],
