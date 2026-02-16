@@ -138,6 +138,28 @@ export function ParticleSystem({ count = 3000 }) {
                     </mesh>
                 </group>
 
+                {/* Vintage Movie Camera */}
+                <group position={[0, -20, -15]} rotation={[0, -0.5, 0.2]}>
+                    {/* Body */}
+                    <mesh>
+                        <boxGeometry args={[1.5, 2, 3]} />
+                        <meshStandardMaterial color="#333" roughness={0.5} />
+                    </mesh>
+                    {/* Lens */}
+                    <mesh position={[0, 0, 1.8]} rotation={[Math.PI / 2, 0, 0]}>
+                        <cylinderGeometry args={[0.8, 0.8, 1, 16]} />
+                        <meshStandardMaterial color="#111" />
+                    </mesh>
+                    {/* Reels on top */}
+                    <mesh position={[0, 1.5, 0.5]} rotation={[0, 0, Math.PI / 2]}>
+                        <cylinderGeometry args={[0.8, 0.8, 0.5, 16]} />
+                        <meshStandardMaterial color="#444" />
+                    </mesh>
+                    <mesh position={[0, 1.5, -0.5]} rotation={[0, 0, Math.PI / 2]}>
+                        <cylinderGeometry args={[0.8, 0.8, 0.5, 16]} />
+                        <meshStandardMaterial color="#444" />
+                    </mesh>
+                </group>
             </Float>
         </>
     )
